@@ -4,3 +4,5 @@ venv
 .vscode
 __pycache__
 *.pyc
+classify-docs-llms.code-workspace
+.env

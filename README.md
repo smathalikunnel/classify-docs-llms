@@ -1,76 +1,104 @@
-# Heron Coding Challenge - File Classifier
+# Join the Siege - Document Classification System
 
 ## Overview
+This repository provides a document classification system that leverages OpenAI's GPT-4 for classifying various types of documents like invoices, bank statements, and driver's licenses. The application uses `pdf2image` for PDF to image conversion, which requires Poppler, and is exposed as a Flask API for convenient access and classification.
 
-At Heron, we’re using AI to automate document processing workflows in financial services and beyond. Each day, we handle over 100,000 documents that need to be quickly identified and categorised before we can kick off the automations.
+## Directory Structure
+```
+join-the-siege/
+├── src/
+│   ├── app.py                   # Flask application
+│   ├── file_processor.py        # Handles file processing
+│   ├── image_encoder.py         # Handles image encoding
+│   ├── image_classifier.py      # Handles image classification
+│   └── utils/
+│       └── batch_monitor.py     # Utility for monitoring batch jobs
+├── data/
+│   └── images/                  # Stores processed images
+├── requirements.txt             # Python dependencies
+└── README.md                    # Project documentation
+```
 
-This repository provides a basic endpoint for classifying files by their filenames. However, the current classifier has limitations when it comes to handling poorly named files, processing larger volumes, and adapting to new industries effectively.
+## Prerequisites
 
-**Your task**: improve this classifier by adding features and optimisations to handle (1) poorly named files, (2) scaling to new industries, and (3) processing larger volumes of documents.
+This project requires [Poppler](https://poppler.freedesktop.org/) to be installed on your system in order to use `pdf2image` for converting PDF documents to images.
 
-This is a real-world challenge that allows you to demonstrate your approach to building innovative and scalable AI solutions. We’re excited to see what you come up with! Feel free to take it in any direction you like, but we suggest:
+### Installing Poppler
+- **macOS**: Install Poppler using Homebrew:
+  ```bash
+  brew install poppler
+  ```
+- **Linux**: Install Poppler using `apt`:
+  ```bash
+  sudo apt-get install poppler-utils
+  ```
+- **Windows**: Download the latest Poppler binaries from [Poppler for Windows](http://blog.alivate.com.au/poppler-windows/). Extract it and add the path to the `bin` directory to your system's PATH.
 
+After installing Poppler, you can proceed to set up the Python environment.
 
-### Part 1: Enhancing the Classifier
+## Setting Up the Environment
 
-- What are the limitations in the current classifier that's stopping it from scaling?
-- How might you extend the classifier with additional technologies, capabilities, or features?
-
-
-### Part 2: Productionising the Classifier 
-
-- How can you ensure the classifier is robust and reliable in a production environment?
-- How can you deploy the classifier to make it accessible to other services and users?
-
-We encourage you to be creative! Feel free to use any libraries, tools, services, models or frameworks of your choice
-
-### Possible Ideas / Suggestions
-- Train a classifier to categorize files based on the text content of a file
-- Generate synthetic data to train the classifier on documents from different industries
-- Detect file type and handle other file formats (e.g., Word, Excel)
-- Set up a CI/CD pipeline for automatic testing and deployment
-- Refactor the codebase to make it more maintainable and scalable
-
-## Marking Criteria
-- **Functionality**: Does the classifier work as expected?
-- **Scalability**: Can the classifier scale to new industries and higher volumes?
-- **Maintainability**: Is the codebase well-structured and easy to maintain?
-- **Creativity**: Are there any innovative or creative solutions to the problem?
-- **Testing**: Are there tests to validate the service's functionality?
-- **Deployment**: Is the classifier ready for deployment in a production environment?
-
-
-## Getting Started
 1. Clone the repository:
-    ```shell
-    git clone <repository_url>
-    cd heron_classifier
-    ```
+   ```bash
+   git clone https://github.com/YOUR_GITHUB_USERNAME/join-the-siege.git
+   cd join-the-siege
+   ```
 
-2. Install dependencies:
-    ```shell
-    python -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    ```
+2. Create a virtual environment and activate it:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
 
-3. Run the Flask app:
-    ```shell
-    python -m src.app
-    ```
+3. Install the required Python packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4. Test the classifier using a tool like curl:
-    ```shell
-    curl -X POST -F 'file=@path_to_pdf.pdf' http://127.0.0.1:5000/classify_file
-    ```
+## Running the Flask Application
 
-5. Run tests:
-   ```shell
-    pytest
-    ```
+To run the Flask API, execute the following command:
+```bash
+python -m src.app
+```
+The application will be accessible at `http://127.0.0.1:5000`.
 
-## Submission
+### Testing the API
+You can test the document classification using `curl`:
+```bash
+curl -X POST -F 'file=@path_to_pdf.pdf' http://127.0.0.1:5000/classify_file
+```
+Replace `path_to_pdf.pdf` with the path to your PDF file.
 
-Please aim to spend 3 hours on this challenge.
+## Documentation: Fine-tuning Process
+This project supports fine-tuning the model for improved classification. Here are the steps to perform fine-tuning on GPT-4:
 
-Once completed, submit your solution by sharing a link to your forked repository. Please also provide a brief write-up of your ideas, approach, and any instructions needed to run your solution. 
+1. **Dataset Preparation**: Create a labeled dataset in JSONL format. Each entry should contain the input prompt and the expected output.
+   - Example format:
+     ```json
+     {"prompt": "Classify this document: {document_content}", "completion": ">>> Medical Record"}
+     ```
+
+2. **Upload Dataset**: Use the OpenAI API to upload your dataset for fine-tuning:
+   ```python
+   training_file = openai.File.create(file=open("training_data.jsonl", "rb"), purpose='fine-tune')
+   ```
+
+3. **Fine-Tune the Model**: Use the OpenAI FineTune API to create a fine-tuned model:
+   ```python
+   fine_tune_response = openai.FineTune.create(training_file=training_file.id, model="gpt-4o-2024-08-06", n_epochs=4, suffix="industry-specific-classifier")
+   ```
+
+4. **Update the Code**: Update the code by replacing the model name in the `fine_tuned_models` dictionary with the fine-tuned model's name returned by the API.
+
+## Notes
+- We are using `ThreadPoolExecutor` instead of `ProcessPoolExecutor` because the operations are I/O-bound (e.g., file reading, API calls).
+- In Google Cloud, this logic could be replaced with Cloud Functions, Pub/Sub, and Cloud Run to achieve better scalability and efficiency.
+- OpenAI's batch functionality is leveraged to send up to 50,000 requests in a single call, which improves scalability, reduces cost, and helps avoid rate limits.
+
+## Contributing
+Contributions are welcome! If you find any issues or have suggestions, please create a pull request or an issue in the GitHub repository.
+
+## License
+This project is licensed under the MIT License. See the `LICENSE` file for more information.
+
