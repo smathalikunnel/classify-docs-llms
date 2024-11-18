@@ -12,9 +12,6 @@ jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
 
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
     steps:
       # Step 1: Checkout the code
       - name: Checkout repository
@@ -38,8 +35,7 @@ jobs:
       - name: Run tests with pytest
         run: |
           source venv/bin/activate
-          export PYTHONPATH=src
-          pytest tests/
+          pytest
 
       # Step 5: Deploy Flask application for testing if tests pass
       - name: Deploy Flask App for Testing
@@ -47,14 +43,14 @@ jobs:
         run: |
           source venv/bin/activate
           # Assuming Flask is configured to run with Gunicorn
-          nohup gunicorn -b 0.0.0.0:5000 src.app:app &
+          nohup gunicorn -b 0.0.0.0:5001 src.app:app &
 
       # Step 6: Verify Deployment (Optional)
       - name: Verify Deployment
         if: success()
         run: |
           sleep 10  # Give some time for the server to start
-          curl --fail -X POST -F 'file=@files/sample.pdf' http://127.0.0.1:5000/classify_file || exit 1
+          curl --fail -X POST -F 'file=@files/invoice_1.pdf' http://127.0.0.1:5001/classify_file || exit 1
 
     #   # Step 7: Deploy to Google Cloud Run if verification passes
     #   - name: Configure Google Cloud SDK
