@@ -52,11 +52,17 @@ python -m src.app
 The application will be accessible at `http://127.0.0.1:5001`.
 
 ### Testing the API
-You can test the document classification using `curl`:
+You can test the single document classification using `curl`:
 ```bash
 curl -X POST -F 'file=@path_to_pdf.pdf' http://127.0.0.1:5001/classify_file
 ```
 Replace `path_to_pdf.pdf` with the path to your PDF file.
+
+You can test the batch documents classification using `curl`:
+```bash
+curl -X GET http://127.0.0.1:5001/classify_files
+```
+Any files placed in the files folder will be picked up for processing.
 
 ## CI/CD Pipeline
 This project uses GitHub Actions to manage Continuous Integration and Continuous Deployment (CI/CD).
