@@ -26,13 +26,15 @@ jobs:
         with:
           python-version: 3.13
 
-      # Step 3: Install dependencies, including poppler-utils for pdf2image
+      # Step 3: Install dependencies, including poppler-utils for pdf2image and gunicorn
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y poppler-utils
           python -m venv venv
           source venv/bin/activate
+          pip install --upgrade pip
           pip install -r requirements.txt
+          pip install gunicorn  # Ensure gunicorn is installed
 
       # Step 4: Run tests using pytest
       - name: Run tests with pytest
@@ -49,8 +51,8 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           source venv/bin/activate
-          # Assuming Flask is configured to run with Gunicorn
-          nohup venv/bin/gunicorn -b 0.0.0.0:5001 src.app:app &
+          # Use the full path to gunicorn within the virtual environment
+          nohup ./venv/bin/gunicorn -b 0.0.0.0:5001 src.app:app &
 
       # Step 6: Verify Deployment (Optional)
       - name: Verify Deployment
