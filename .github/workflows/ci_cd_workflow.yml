@@ -12,6 +12,9 @@ jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
     steps:
       # Step 1: Checkout the code
       - name: Checkout repository
@@ -33,6 +36,8 @@ jobs:
 
       # Step 4: Run tests using pytest
       - name: Run tests with pytest
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           source venv/bin/activate
           pytest
@@ -40,10 +45,12 @@ jobs:
       # Step 5: Deploy Flask application for testing if tests pass
       - name: Deploy Flask App for Testing
         if: success()
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           source venv/bin/activate
           # Assuming Flask is configured to run with Gunicorn
-          nohup gunicorn -b 0.0.0.0:5001 src.app:app &
+          nohup venv/bin/gunicorn -b 0.0.0.0:5001 src.app:app &
 
       # Step 6: Verify Deployment (Optional)
       - name: Verify Deployment
