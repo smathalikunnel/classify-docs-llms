@@ -1,0 +1,90 @@
+name: CI/CD Pipeline for Flask App
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.13
+
+      # Step 3: Install dependencies, including poppler-utils for pdf2image
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y poppler-utils
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      # Step 4: Run tests using pytest
+      - name: Run tests with pytest
+        run: |
+          source venv/bin/activate
+          export PYTHONPATH=src
+          pytest tests/
+
+      # Step 5: Deploy Flask application for testing if tests pass
+      - name: Deploy Flask App for Testing
+        if: success()
+        run: |
+          source venv/bin/activate
+          # Assuming Flask is configured to run with Gunicorn
+          nohup gunicorn -b 0.0.0.0:5000 src.app:app &
+
+      # Step 6: Verify Deployment (Optional)
+      - name: Verify Deployment
+        if: success()
+        run: |
+          sleep 10  # Give some time for the server to start
+          curl --fail -X POST -F 'file=@files/sample.pdf' http://127.0.0.1:5000/classify_file || exit 1
+
+    #   # Step 7: Deploy to Google Cloud Run if verification passes
+    #   - name: Configure Google Cloud SDK
+    #     if: success()
+    #     uses: google-github-actions/setup-gcloud@v1
+    #     with:
+    #       version: 'latest'
+    #       service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+    #       project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    #   - name: Build Docker Image
+    #     if: success()
+    #     run: |
+    #       gcloud auth configure-docker
+    #       docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:latest .
+
+    #   - name: Push Docker Image to Google Container Registry
+    #     if: success()
+    #     run: |
+    #       docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:latest
+
+    #   - name: Deploy to Google Cloud Run
+    #     if: success()
+    #     run: |
+    #       gcloud run deploy flask-app --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:latest --platform managed --region us-central1 --allow-unauthenticated
+
+    #   # Step 8: Verify Google Cloud Run Deployment
+    #   - name: Verify Google Cloud Run Deployment
+    #     if: success()
+    #     run: |
+    #       # Replace YOUR_CLOUD_RUN_SERVICE_URL with the actual URL of your Cloud Run service
+    #       sleep 20  # Give some time for the Cloud Run deployment to complete
+    #       curl --fail -X POST -F 'file=@files/sample.pdf' https://YOUR_CLOUD_RUN_SERVICE_URL/classify_file || exit 1

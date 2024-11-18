@@ -1,7 +1,6 @@
 from io import BytesIO
 import pytest
 from src.app import app
-import time
 
 @pytest.fixture
 def client():
